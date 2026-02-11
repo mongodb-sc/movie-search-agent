@@ -1,170 +1,114 @@
-# Movie Agent – Setup Instructions (What You Missed)
+# Movie Agent – Setup Instructions
 
-This is the setup guide for your movie recommendation agent. Follow these steps in order.
-
----
-
-## Quick answers to your original questions
-
-| Question | Answer |
-|----------|--------|
-| **Does my architecture make sense?** | Yes. Azure OpenAI as the brain, MCP for MongoDB (natural-language → queries), a custom `recommend_movie` tool, and optional Voyage for embeddings/reranker is a solid design. |
-| **What am I possibly missing?** | For a 30‑min demo: nothing critical. Later you could add: **Atlas Vector Search** (Voyage embeddings on plot) for “movies like X”, **Voyage reranker** after retrieval, and **structured output** (e.g. JSON) from Gemini for your app. |
-| **Do I need an API key for Azure OpenAI?** | Yes (endpoint + API key + deployment name). |
-| **Where do I get Azure OpenAI credentials?** | **Azure Portal** → your Azure OpenAI resource → **Keys and endpoint**; in **Azure OpenAI Studio**, create a deployment and set `AZURE_OPENAI_DEPLOYMENT`. |
+Step-by-step setup for the movie recommendation agent. Follow in order.
 
 ---
 
-## 30‑minute setup (do this in order)
+## What you need
 
-### Step 1: Get API keys and MongoDB URI
-
-1. **Azure OpenAI (required)**  
-   - Azure Portal → your **Azure OpenAI** resource → **Keys and endpoint**.  
-   - Copy **Endpoint** → save as `AZURE_OPENAI_ENDPOINT` in `.env` (e.g. `https://your-resource.openai.azure.com/`).  
-   - Copy **Key** → save as `AZURE_OPENAI_API_KEY` in `.env`.  
-   - In **Azure OpenAI Studio** → **Deployments** → create or use an existing deployment (e.g. gpt-4o) → set `AZURE_OPENAI_DEPLOYMENT` to that name.
-
-2. **MongoDB Atlas (required)**  
-   - In Atlas: your M10 cluster → **Connect** → **Drivers** → copy the connection string.  
-   - Replace `<password>` with your database user password.  
-   - Save as `MONGODB_URI` in `.env` (Step 2). If your URI has no database path (e.g. ends with `.mongodb.net/`), the agent automatically uses `sample_mflix` for MCP.
-
-3. **Voyage AI (optional)**  
-   - **https://dash.voyageai.com/** → get API key.  
-   - Save as `VOYAGE_API_KEY` in `.env` if you want embeddings/reranker later.
+| Item | Purpose |
+|------|---------|
+| **Azure OpenAI** | LLM (endpoint, API key, deployment name). |
+| **MongoDB Atlas** | Data (`sample_mflix`), short-term memory (checkpointer), long-term memory. |
+| **Python 3.10+** | Required by the `mcp` package. |
+| **Node.js** | The agent starts the MongoDB MCP server via `npx`; Node is required. |
+| **Voyage AI** (optional) | Semantic search and “movies like X” (embeddings + reranker). |
 
 ---
 
-### Step 2: Python 3.10+ and project setup
+## Step 1: API keys and MongoDB URI
 
-The **MCP package requires Python 3.10 or newer**. macOS often ships with Python 3.9, so you may need to install a newer Python first.
+**Azure OpenAI**
 
-**Check your Python version:**
+1. Azure Portal → your **Azure OpenAI** resource → **Keys and endpoint**.
+2. Copy **Endpoint** → in `.env` set `AZURE_OPENAI_ENDPOINT` (e.g. `https://your-resource.openai.azure.com/`).
+3. Copy **Key** → set `AZURE_OPENAI_API_KEY`.
+4. In **Azure OpenAI Studio** → **Deployments** → create or use a deployment (e.g. gpt-4o) → set `AZURE_OPENAI_DEPLOYMENT` to that name.
+
+**MongoDB Atlas**
+
+1. Atlas → your cluster → **Connect** → **Drivers** → copy the connection string.
+2. Replace `<password>` with your database user password.
+3. Set `MONGODB_URI` in `.env`. The agent uses `sample_mflix` for movie data and MCP; the same cluster is used for checkpointer and long-term memory.
+
+**Voyage AI (optional, for semantic search)**
+
+- Get an API key from https://dash.voyageai.com/ and set `VOYAGE_API_KEY` in `.env` if you want “movies like X” or plot-based search.
+
+---
+
+## Step 2: Project setup
+
+**Check Python version:**
 
 ```bash
 python3 --version
 ```
 
-If you see **3.9.x or lower**, install Python 3.12 (or 3.10/3.11) with Homebrew:
-
-```bash
-brew install python@3.12
-```
-
-Then use that Python for the rest of the setup (e.g. `/opt/homebrew/bin/python3.12` or `$(brew --prefix python@3.12)/bin/python3.12`).
+You need **3.10 or newer**. If you have 3.9 or lower, install Python 3.12 (e.g. `brew install python@3.12`) and use that for the venv.
 
 **Create `.env` and install dependencies:**
 
 ```bash
-cd /Users/ajay.raghav/movie-agent
-
-# Create .env from template
+cd movie-agent
 cp .env.example .env
+# Edit .env: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT, MONGODB_URI
 
-# Edit .env and add (replace placeholders with your real values):
-#   AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-#   AZURE_OPENAI_API_KEY=...
-#   AZURE_OPENAI_DEPLOYMENT=gpt-4o
-#   MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/
-#   VOYAGE_API_KEY=pa-...   (optional)
-```
-
-**Create the virtualenv with Python 3.10+** (use the same Python you checked above):
-
-```bash
-# If you have Python 3.10+ as python3:
 python3 -m venv .venv
-
-# If you installed via Homebrew (python@3.12):
-# $(brew --prefix python@3.12)/bin/python3.12 -m venv .venv
-
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-If you already created a venv with Python 3.9, remove it and recreate with 3.10+:
-
-```bash
-rm -rf .venv
-$(brew --prefix python@3.12)/bin/python3.12 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
 ---
 
-### Step 3: Install Node.js (for MongoDB MCP server)
+## Step 3: Node.js (for MongoDB MCP)
 
-The MongoDB MCP server runs on Node. Your Python agent will start it automatically.
+The agent starts the MongoDB MCP server with `npx`. Node.js must be installed.
 
 ```bash
 node -v
 ```
 
-- If you see **v20.19+** or **v22.12+**, you’re good.  
-- If not: install from **https://nodejs.org** or run:
-
-```bash
-brew install node
-```
+If not installed: https://nodejs.org or `brew install node`. Recommended: v20.19+ or v22.12+.
 
 ---
 
-### Step 4: Run the agent
+## Step 4: Run the agent
 
 ```bash
-cd /Users/ajay.raghav/movie-agent
 source .venv/bin/activate
 python agent.py
 ```
 
-You should see something like:  
-`MongoDB MCP connected. N tools loaded...` and `Movie agent ready.`
+You should see: `MongoDB MCP connected. N tools loaded.` and `Movie agent ready.`
 
-Try in the REPL:
+Try:
 
-- *“Recommend a sci‑fi movie from the 90s.”*
+- *“Recommend a sci-fi movie from the 90s.”*
 - *“How many movies are in the database?”*
-- *“List some action movies from 2000.”*
+- *“Remember I love thrillers.”*
 
 ---
 
-## Optional: Use MongoDB MCP inside Cursor
+## Optional: Vector search (“movies like X”, plot search)
 
-So that Cursor’s AI can also query your Atlas cluster (e.g. “List collections in my Atlas cluster”):
+To use semantic search over plots and “movies like [title]”:
 
-1. Create or edit **`~/.cursor/mcp.json`** (create the file if it doesn’t exist).
-2. Paste this (replace `YOUR_MONGODB_URI` with your real Atlas connection string):
+1. Set `VOYAGE_API_KEY` in `.env`.
+2. Run once: `python embed_movies.py` (writes `plot_embedding` to each movie).
+3. In Atlas, create a **Vector Search** index on `sample_mflix.movies`:
+   - Name: `plot_vector_index`
+   - Path: `plot_embedding`
+   - Dimensions: `512` (default with voyage-3.5-lite)
+   - Similarity: cosine or dotProduct
 
-```json
-{
-  "mcpServers": {
-    "mongodb": {
-      "command": "npx",
-      "args": ["-y", "mongodb-mcp-server", "--readOnly"],
-      "env": {
-        "MDB_MCP_CONNECTION_STRING": "YOUR_MONGODB_URI"
-      }
-    }
-  }
-}
-```
-
-3. Restart Cursor.
-
-You can use the project’s **cursor-mcp.json.example** as reference; it has the same structure.
+After that, the agent can use `semantic_search_plots` and `movies_like`.
 
 ---
 
-## Summary
+## Troubleshooting
 
-- **Required:** Azure OpenAI (AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT), MongoDB Atlas URI, Python venv + `pip install -r requirements.txt`, Node.js for MCP.  
-- **Optional:** Voyage API key (embeddings/reranker), Cursor MCP config for querying Atlas from Cursor.  
-- **Sample data:** Your M10 cluster’s **sample_mflix** database (with **movies** collection) is what the agent and MCP use.
-
-If anything fails, check: (1) `.env` has correct `AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT` and `MONGODB_URI`, (2) Node is installed and `npx` works, (3) you’re inside the venv when running `python agent.py`.  
-If the agent says **"The configured connection string is not valid"**, fix `MONGODB_URI` in `.env`: use your Atlas connection string (e.g. `mongodb+srv://user:password@cluster.mongodb.net/`), replace `<password>` with your DB user password, and ensure there are no extra spaces or placeholders.
-
+- **Agent won’t start:** Check `.env` has `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, and `MONGODB_URI` with no typos or leftover placeholders.
+- **“Connection string is not valid”:** Fix `MONGODB_URI`: replace `<password>`, no extra spaces, use the full Atlas connection string.
+- **MCP not connecting:** Ensure Node.js is installed and `npx` works (`npx -v`). The agent spawns `npx -y mongodb-mcp-server` with your `MONGODB_URI`.
+- **Python version errors:** Use Python 3.10+ for the venv. If you had a 3.9 venv, remove `.venv` and create a new one with 3.10+.
