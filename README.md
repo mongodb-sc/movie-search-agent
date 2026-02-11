@@ -1,6 +1,6 @@
 # Movie Recommendation AI Agent
 
-Azure OpenAI–powered agent with MongoDB (MCP), movie recommendation tool, and optional Voyage AI embeddings/reranker. Uses the **sample_mflix** database (movies collection) on your Atlas M10 cluster.
+**LangGraph**-orchestrated agent with **Azure OpenAI**, **MongoDB** (MCP + short- and long-term memory), movie recommendation tools, and optional Voyage AI embeddings/reranker. Uses the **sample_mflix** database on your Atlas cluster; the same cluster backs conversation (short-term) and long-term memory.
 
 > **→ Step-by-step setup:** see **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** for the full 30‑minute setup and answers to common questions (API keys, architecture, what you might add later).
 
@@ -17,7 +17,8 @@ Azure OpenAI–powered agent with MongoDB (MCP), movie recommendation tool, and 
 
 **Does it make sense?** Yes. You get:
 - **Recommendation flow**: User asks for a movie → agent uses `recommend_movie` (and/or MCP find/aggregate on `sample_mflix.movies`).
-- **General DB flow**: User asks ad‑hoc questions → Azure OpenAI chooses MCP tools and builds queries.
+- **General DB flow**: User asks ad‑hoc questions → agent chooses MCP tools and builds queries.
+- **Memory**: Same Atlas cluster for both checkpoint (conversation) and long-term facts; say "remember I love sci-fi" and the agent stores it for future sessions (same `SESSION_ID`).
 
 **What you might add later (not required for 30‑min setup):**
 - **Atlas Vector Search** on a movies collection (e.g. plot embeddings with Voyage) for “movies like X” semantic search.

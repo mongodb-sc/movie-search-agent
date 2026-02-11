@@ -4,3 +4,10 @@ mcp>=1.0.0
 voyageai>=0.2.0
 pymongo>=4.6.0
 python-dotenv>=1.0.0
+
+# LangGraph orchestrator + MongoDB checkpointer (short-term) and long-term memory
+langgraph>=0.2.0
+langgraph-checkpoint-mongodb>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
