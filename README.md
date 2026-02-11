@@ -1,8 +1,8 @@
 # Movie Recommendation AI Agent
 
-A movie assistant that recommends films, answers questions about the database, and remembers preferences. Uses **LangGraph** for orchestration, **Azure OpenAI** as the LLM, **MongoDB** for data and memory, and optional **Voyage AI** for semantic search.
+A movie assistant that recommends films, answers questions about the database, and remembers preferences. Uses **LangGraph** for orchestration, **Azure OpenAI** as the LLM, **MongoDB** for data and memory, and **Voyage AI** for semantic search (“movies like X”, plot-based search).
 
-**Quick start:** Copy `.env.example` to `.env`, set `AZURE_OPENAI_*` and `MONGODB_URI`, then `pip install -r requirements.txt` and `python agent.py`. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for a full walkthrough.
+**Quick start:** Copy `.env.example` to `.env`, set `AZURE_OPENAI_*`, `MONGODB_URI`, and `VOYAGE_API_KEY`, then `pip install -r requirements.txt` and `python agent.py`. Run `python embed_movies.py` once and create the Atlas vector index. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for a full walkthrough.
 
 ---
 
@@ -17,8 +17,8 @@ All components and how they are used:
 | **Tools** | Custom (Python) + MCP | **Custom:** `recommend_movie`, `semantic_search_plots`, `movies_like`, `remember`. **MCP:** MongoDB server exposes `count`, `find`, `aggregate`, `list-collections`, etc. on `sample_mflix`. Agent picks the right tool from the user message. |
 | **Short-term memory** | LangGraph + MongoDB | Conversation history per `thread_id` is stored in MongoDB via `langgraph-checkpoint-mongodb` (DB: `LANGGRAPH_CHECKPOINT_DB`, default `langgraph_checkpoints`). Same cluster as `MONGODB_URI`. |
 | **Long-term memory** | MongoDB (`memory.py`) | Facts the user asks to remember are stored in `agent_memory.long_term_memory`. Loaded each turn and prepended to the user message so the LLM sees them. |
-| **Embeddings** | Voyage AI (optional) | Used only for semantic search: embed query (and plot text in `embed_movies.py`) with `VOYAGE_EMBED_MODEL` (default `voyage-3.5-lite`), 512 dims. Atlas Vector Search on `plot_embedding`. |
-| **Reranker** | Voyage AI (optional) | Used inside `semantic_search_plots`: Voyage `rerank-2` reorders vector-search results for relevance. |
+| **Embeddings** | Voyage AI | Embeds query and plot text (`embed_movies.py`) with `VOYAGE_EMBED_MODEL` (default `voyage-3.5-lite`), 512 dims. Atlas Vector Search on `plot_embedding` powers “movies like X” and plot search. |
+| **Reranker** | Voyage AI | Used inside `semantic_search_plots`: Voyage `rerank-2` reorders vector-search results for relevance. |
 | **Data** | MongoDB Atlas | Same cluster: `sample_mflix` (movies + vector index), checkpointer DB, and `agent_memory`. PyMongo in Python; MCP uses its own connection for its tools. |
 
 **Flow:** User message → long-term memory loaded and prepended → graph runs with that thread’s checkpointed history → LLM may call tools (custom or MCP) → tool results appended → LLM continues until final reply.
@@ -27,12 +27,11 @@ All components and how they are used:
 
 ## Setup
 
-1. **Env:** `cp .env.example .env` and set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `MONGODB_URI`. Optional: `VOYAGE_API_KEY` for semantic search; `SESSION_ID`, `LANGGRAPH_CHECKPOINT_DB`, `AGENT_MEMORY_DB` for memory.
+1. **Env:** `cp .env.example .env` and set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `MONGODB_URI`, and `VOYAGE_API_KEY`. Optional: `SESSION_ID`, `LANGGRAPH_CHECKPOINT_DB`, `AGENT_MEMORY_DB` for memory.
 2. **Install:** `python3 -m venv .venv`, `source .venv/bin/activate`, `pip install -r requirements.txt`.
 3. **Node.js:** Required for MongoDB MCP (`npx mongodb-mcp-server`). Install from [nodejs.org](https://nodejs.org) if needed.
-4. **Run:** `python agent.py`. Try: “Recommend a sci-fi movie”, “How many comedy movies?”, “Remember I love thrillers.”
-
-For vector search (“movies like X”, “what’s that movie where…”): run `python embed_movies.py` once, create an Atlas Vector Search index `plot_vector_index` on `plot_embedding` (512 dims), and set `VOYAGE_API_KEY`. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for details.
+4. **Vector search:** Run `python embed_movies.py` once, then create an Atlas Vector Search index `plot_vector_index` on `plot_embedding` (512 dims). See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for details.
+5. **Run:** `python agent.py`. Try: “Recommend a sci-fi movie”, “Movies like Inception”, “Remember I love thrillers.”
 
 ---
 

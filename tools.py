@@ -1,5 +1,5 @@
 """
-Movie recommendation tool and optional Voyage reranker.
+Movie recommendation tool and Voyage reranker.
 Uses sample_mflix.movies on MongoDB Atlas.
 """
 import os
@@ -71,7 +71,7 @@ EMBED_DIMENSION = 512 if VOYAGE_EMBED_MODEL in MODELS_WITH_FLEXIBLE_DIM else 102
 def semantic_search_plots(query: str, limit: int = 5, use_reranker: bool = True) -> str:
     """
     Semantic search over movie plots. Embeds the query with Voyage AI, runs
-    Atlas Vector Search on the plot_embedding field, then optionally reranks
+    Atlas Vector Search on the plot_embedding field, then reranks
     candidates with Voyage AI reranker for better relevance.
 
     Use for questions like "what's that movie where ..." or "movies about time travel".
@@ -222,7 +222,7 @@ def movies_like(movie_title: str, limit: int = 5) -> str:
 
 def rerank_with_voyage(query: str, documents: list[str], top_k: int = 5) -> list[str]:
     """
-    Optional: use Voyage AI reranker to reorder documents by relevance to the query.
+    Use Voyage AI reranker to reorder documents by relevance to the query.
     Requires VOYAGE_API_KEY. Returns top_k document strings in order.
     """
     api_key = os.environ.get("VOYAGE_API_KEY")
