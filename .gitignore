@@ -26,3 +26,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local UI server (when started via nohup/screen)
+ui-server.log
+ui-server.pid

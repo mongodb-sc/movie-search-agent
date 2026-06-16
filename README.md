@@ -2,7 +2,7 @@
 
 A movie assistant that recommends films, answers questions about the database, and remembers preferences. Uses **LangGraph** for orchestration, **Azure OpenAI** as the LLM, **MongoDB** for data and memory, and **Voyage AI** for semantic search (“movies like X”, plot-based search).
 
-**Quick start:** Copy `.env.example` to `.env`, set `AZURE_OPENAI_*`, `MONGODB_URI`, and `VOYAGE_API_KEY`, then `pip install -r requirements.txt` and `python agent.py`. Run `python embed_movies.py` once and create the Atlas vector index. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for a full walkthrough.
+**Quick start:** Copy `.env.example` to `.env`, set `AZURE_OPENAI_*`, `MONGODB_URI`, and `VOYAGE_API_KEY`, then `pip install -r requirements.txt` and `python app.py` (web UI) or `python agent.py` (CLI). Run `python embed_movies.py` once and create the Atlas vector index. See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for a full walkthrough.
 
 ---
 
@@ -31,7 +31,7 @@ All components and how they are used:
 2. **Install:** `python3 -m venv .venv`, `source .venv/bin/activate`, `pip install -r requirements.txt`.
 3. **Node.js:** Required for MongoDB MCP (`npx mongodb-mcp-server`). Install from [nodejs.org](https://nodejs.org) if needed.
 4. **Vector search:** Run `python embed_movies.py` once, then create an Atlas Vector Search index `plot_vector_index` on `plot_embedding` (512 dims). See [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) for details.
-5. **Run:** `python agent.py`. Try: “Recommend a sci-fi movie”, “Movies like Inception”, “Remember I love thrillers.”
+5. **Run:** `python app.py` for the web UI (default http://127.0.0.1:7860), or `python agent.py` for the CLI. Try: “Recommend a sci-fi movie”, “Movies like Inception”, “Remember I love thrillers.”
 
 ---
 
@@ -39,7 +39,9 @@ All components and how they are used:
 
 | File | Purpose |
 |------|---------|
-| `agent.py` | Entrypoint: LangGraph agent, tools, MCP client, memory wiring. |
+| `app.py` | Web UI entrypoint (Gradio chat). |
+| `agent.py` | CLI entrypoint. |
+| `agent_service.py` | Shared LangGraph agent runtime for CLI and UI. |
 | `tools.py` | `recommend_movie`, `semantic_search_plots`, `movies_like`, Voyage embed/rerank. |
 | `memory.py` | Long-term memory: read/write to MongoDB `agent_memory.long_term_memory`. |
 | `embed_movies.py` | One-time script to backfill `plot_embedding` with Voyage. |

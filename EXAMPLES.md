@@ -1,6 +1,32 @@
 # Movie Agent – Example Paths
 
-When you run `python agent.py`, the agent can take different paths depending on your question. Below are example prompts and what happens under the hood (tools used and typical flow). With `SHOW_THINKING=1` (default), the console prints each tool call and result so you can see how the agent gets its information.
+When you run `python app.py` (web UI) or `python agent.py` (CLI), the agent can take different paths depending on your question. Below are example prompts and what happens under the hood (tools used and typical flow). With `SHOW_THINKING=1` (default), the console prints each tool call and result so you can see how the agent gets its information.
+
+---
+
+## 0. Slash commands (direct tools, no LLM)
+
+**Prefix with `/` to run a tool immediately** — faster and no Azure OpenAI call.
+
+| You type | What happens |
+|----------|----------------|
+| `/help` | Lists all slash commands. |
+| `/recommend sci-fi --year-min 1990 --year-max 1999` | Runs `recommend_movie` with genre and year filters. |
+| `/like Inception` | Runs `movies_like` for similar films. |
+| `/search shark terrorizing a beach town` | Runs `semantic_search_plots` (needs Voyage + vector index). |
+| `/remember I love thrillers` | Saves a fact to long-term memory for this session. |
+| `/memory` | Shows saved facts for the current session ID. |
+| `/count` | Returns movie count from `sample_mflix.movies`. |
+| `/genres --limit 5` | Top 5 genres by movie count. |
+
+**Web UI:** These appear under **Try an example** in the chat. Slash commands skip agent startup (no LLM).
+
+**Console (thinking on):**
+```
+You: /count
+  [thinking] [direct] → count(database='sample_mflix', collection='movies')
+Agent: **23,541** movies in `sample_mflix.movies`.
+```
 
 ---
 
@@ -97,6 +123,7 @@ SHOW_THINKING=0
 
 | Path | Main tools | Data source |
 |------|------------|-------------|
+| Slash commands (`/recommend`, `/search`, etc.) | Direct tool call | Same as below; **no LLM** |
 | “Recommend a movie / find a film” | `recommend_movie` | `sample_mflix.movies` (PyMongo in `tools.py`) |
 | “How many… / list… / what collections / schema” | MCP: `count`, `find`, `aggregate`, `list-collections`, `collection-schema`, etc. | MongoDB via MCP server |
 
